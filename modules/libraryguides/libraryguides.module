@@ -98,7 +98,7 @@ function libraryguides_help($path, $arg) {
  * Display Library Guides Index page
  */
 function libraryguides_index_page() {
-  $content .= '<h3>Library Guides Categories</h3>';
+  $content .= '<h1 class="title">Library Guides Categories</h1>';
    $content .= _fetch_libraryguides_index();
    return $content;
 }
@@ -111,24 +111,24 @@ function libraryguides_category_page($cid) {
    $category_info = _get_category_info($cid);
 
    drupal_set_title('Library Guides');
-   $content .= '<h3>'. $category_info->name . '</h3>';
+   $content .= '<h1 class="title">'. $category_info->name . '</h1>';
    $content .= '<div id="libraryguides-list" >';
    if ($category_info->haslibguide) {
       $url = 'http://api.libguides.com/api_search.php?iid=41&search=' . urlencode($category_info->name) .'&type=category&break=br&more=false';
       // drupal_set_message("calling: " . $url);
       $response .= _libraryguides_fetch_guides($url);
       if (empty($response)) {
-         $content .= "<h4>Library Guides</h4>";
+         $content .= "<h3>Library Guides</h3>";
          $content .= 'No Library Guides available. <br>';
       } else {
-         $content .= "<h4>Library Guides</h4>";
+         $content .= "<h3>Library Guides</h3>";
          $content .= $response;
       }
    }
 
    if ($category_info->hassubjguide) {
       // $content .= "<div><a href='" . $category_info->otherurl . "'>Other Subject Guides</a></div>";
-      $content .= "<h4>Additional Subject Guides</h4>";
+      $content .= "<h3>Additional Subject Guides</h3>";
       $content .= _get_subjectguide_content($category_info->otherurl);
    }
    $content .= '</div>';
