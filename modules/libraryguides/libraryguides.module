@@ -98,6 +98,7 @@ function libraryguides_help($path, $arg) {
  * Display Library Guides Index page
  */
 function libraryguides_index_page() {
+  $content .= '<h3>Library Guides Categories</h3>';
    $content .= _fetch_libraryguides_index();
    return $content;
 }
@@ -109,7 +110,8 @@ function libraryguides_category_page($cid) {
 
    $category_info = _get_category_info($cid);
 
-   drupal_set_title('Library Guides: ' . $category_info->name );
+   drupal_set_title('Library Guides');
+   $content .= '<h3>'. $category_info->name . '</h3>';
    $content .= '<div id="libraryguides-list" >';
    if ($category_info->haslibguide) {
       $url = 'http://api.libguides.com/api_search.php?iid=41&search=' . urlencode($category_info->name) .'&type=category&break=br&more=false';
