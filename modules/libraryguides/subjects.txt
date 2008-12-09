@@ -1,0 +1,34 @@
+<li>Agriculture</li>
+<li>Anthropology</li>
+<li>Art and Architecture</li>
+<li>Arts and Humanities</li>
+<li>Biology</li>
+<li>Business and Management</li>
+<li>Chemistry</li>
+<li>Communications</li>
+<li>Computers and Software</li>
+<li>Course Guides</li>
+<li>Economics</li>
+<li>Engineering</li>
+<li>Environment and Natural Resources</li>
+<li>Food and Nutrition</li>
+<li>General Interest and Reference</li>
+<li>Geography, Maps and Spatial Data</li>
+<li>Geology</li>
+<li>Government, Law and Public Policy</li>
+<li>History</li>
+<li>Information and Library Science</li>
+<li>Labor, Human Resources and Employment</li>
+<li>Linguistics, Language and Literature</li>
+<li>Math and Statistics</li>
+<li>Medicine (Human and Veterinary)</li>
+<li>Music</li>
+<li>Philosophy and Religion</li>
+<li>Physics and Astronomy</li>
+<li>Population and Demography</li>
+<li>Psychology</li>
+<li>Research and Writing</li>
+<li>Science and Technology</li>
+<li>Social Sciences</li>
+<li>Sociology and Rural Development</li>
+

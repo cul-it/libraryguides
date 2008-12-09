@@ -1,0 +1,114 @@
+<?php
+// $Id $
+
+/**
+ * @file
+ * libraryguides module install file.
+ */
+
+/**
+ * Define the 'libraryguides_categories' table structure.
+ *
+ * @return
+ *   The schema which contains the structure for the libraryguides module's tables.
+ */
+function libraryguides_schema() {
+  $schema['libraryguides_categories'] = array(
+    'description' => t('A table containing the libraryguides categories.'),
+    'fields' => array(
+      'cid' => array('type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE, 'description' => t('The primary identifier category. ')),
+      'name' => array('type' => 'text', 'size' => 'normal', 'not null' => TRUE, 'description' => t('The category name.')),
+      'haslibguide' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0, 'not null' => TRUE, 'description' => t('Category contains LibGuides.')),
+      'hassubjguide' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0, 'not null' => TRUE, 'description' => t('Category contains Other Subject Guides.')),
+      'url' => array('type' => 'text', 'size' => 'normal', 'not null' => TRUE, 'description' => t('The libraryguides url for this category.')),
+      'otherurl' => array('type' => 'text', 'size' => 'normal', 'not null' => TRUE, 'description' => t('The other url for this category.')),
+    ),
+    'primary key' => array('cid'),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implementation of hook_install().
+ *
+ * Inserts the libraryguides module's schema in the SQL database.
+ */
+function libraryguides_install() {
+
+  drupal_set_message('Installing libraryguides schema');
+  drupal_install_schema('libraryguides');
+  //db_query("CREATE TABLE {libraryguides_categories} (
+  //    cid INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+  //    name VARCHAR(255) NOT NULL DEFAULT '',
+  //    haslibguide INT(10) default 0,
+  //    hassubjguide INT(10) default 1,
+  //     url VARCHAR(255) NOT NULL DEFAULT '',
+  //     otherurl VARCHAR(255) NOT NULL DEFAULT '',
+  //     PRIMARY KEY (cid)
+  //    ) TYPE=MyISAM;");
+  drupal_set_message('libraryguides Schema Installed');
+}
+
+/*
+ * Add hassubjguide and otherurl fields to store non-libguides url
+ */
+function libraryguides_update_1() {
+   $ret = array();
+
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      $ret[] = update_sql("ALTER TABLE {libraryguides_categories} ADD COLUMN hassubjguide CHAR(1)  default 'N' ");
+      $ret[] = update_sql("ALTER TABLE {libraryguides_categories} ADD COLUMN otherurl VARCHAR(255)  default '' ");
+      break;
+  }
+
+  drupal_set_message("The schema for LibgraryGuides module has been updated.  ");
+  return $ret;
+
+}
+
+/*
+ * Add hassubjguide and otherurl fields to store non-libraryguides url
+ */
+function libraryguides_update_2() {
+  // get current data
+  $result = db_query("SELECT * from {libraryguides_categories}");
+
+   $ret = array();
+
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      $ret[] = update_sql("ALTER TABLE {libraryguides_categories} DROP COLUMN haslibguide");
+      $ret[] = update_sql("ALTER TABLE {libraryguides_categories} ADD COLUMN haslibguide INT(10) UNSIGNED NOT NULL default 0 ");
+      $ret[] = update_sql("ALTER TABLE {libraryguides_categories} DROP COLUMN hassubjguide");
+      $ret[] = update_sql("ALTER TABLE {libraryguides_categories} ADD COLUMN hassubjguide INT(10) UNSIGNED NOT NULL default 0 ");
+      break;
+  }
+  while ($row = db_fetch_object($result)) {
+    if ($row->haslibguide == 'Y') {  $newlg = 1; } else { $newlg = 0;	}
+    if ($row->hassubjguide == 'Y') {  $newsg = 1; } else { $newsg = 0;	}
+     $res = db_query("UPDATE {libguides_categories} SET haslibguide='%d', hassubjguide='%d'", $newlg, $newsg );
+  }
+  drupal_set_message("The schema for libraryguides module has been updated.  ");
+  return $ret;
+
+}
+
+/**
+ * Implementation of hook_uninstall().
+ *
+ * Remove the variables, nodes and schema corresponding to the libraryguides module.
+ */
+function libraryguides_uninstall() {
+
+  db_query('DROP TABLE IF EXISTS {libraryguides_categories}');
+  // Delete the variables we created.
+  variable_del('libraryguides_search_status');
+  variable_del('libraryguides_search_url');
+  drupal_set_message('libraryguides Schema Removed');
+}
+
+?>

@@ -1,0 +1,7 @@
+; $Id$
+name = "libraryguides"
+description = "Dynamically Display libraryguides Content."
+core = 6.x
+php = 5.1
+version = "6.x-0.2"
+

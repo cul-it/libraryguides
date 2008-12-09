@@ -1,0 +1,405 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Module for fetching data from guides.library.cornell.edu
+ * This module provides block content retrieved from a
+ * guides.library.cornell.edu site
+ * @see http://guides.library.cornell.edu
+ */
+
+// set LIBRARYGUIDES_BASEPATH to the path you want to use for Library Guides
+define(LIBRARYGUIDES_BASEPATH, 'resrch/libguides');
+define(LIBRARYGUIDES_CATEGORY_PATH, 'resrch/libguides/%');
+ /*
+  * Implementation of hook_menu()
+  */
+function libraryguides_menu() {
+   $items = array();
+   $access = array('administer libraryguides');
+
+
+   $items[LIBRARYGUIDES_BASEPATH] = array(
+    'title' => 'Library Guides',
+    'description' => 'Display Library Guides Index.',
+    'page callback' => 'libraryguides_index_page',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+   );
+   // get an index for the arry we will pass for the page callback
+   // the wildcard card must be at the end of the path
+   $array_index = substr_count(LIBRARYGUIDES_CATEGORY_PATH, "/");
+
+
+   $items[LIBRARYGUIDES_CATEGORY_PATH] = array(
+    'title' => 'Library Guides',
+    'description' => 'Display Library Guides for a category.',
+    'page callback' => 'libraryguides_category_page',
+    'page arguments' => array($array_index),
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+   );
+
+   $items['admin/settings/libraryguides'] = array(
+    'title' => 'LibGuides',
+    'description' => 'Configure Library Guides Categories.',
+    'page callback' => 'libraryguides_settings_page',
+    'access arguments' => $access,
+    'file' => 'libraryguides.admin.inc',
+   );
+
+   $items['admin/settings/libraryguides/delete'] = array(
+    'title' => 'Delete Category',
+    'description' => 'Delete Library Guides Category',
+    'page callback' => 'libraryguides_category_delete',
+    'access arguments' => $access,
+    'file' => 'libraryguides.admin.inc',
+   );
+   $items['admin/settings/libraryguides/edit'] = array(
+    'title' => 'Edit Category',
+    'description' => 'Edit Library Guides Category',
+    'page callback' => 'libraryguides_category_edit',
+    'access arguments' => $access,
+    'file' => 'libraryguides.admin.inc',
+   );
+
+   return $items;
+
+}
+
+/**
+ * Implementation of hook_perm()
+ *
+ */
+function libraryguides_perm() {
+  return array('administer libraryguides');
+}
+
+/**
+ * Implementation of hook_help()
+ */
+function libraryguides_help($path, $arg) {
+
+  if ($path == 'admin/help#libraryguides') {
+    $txt = 'The libraryguides module uses the !libraryguides_url  '
+      .'API to retrieve a list of guides for a category '
+      .'content.';
+    $link = l('http://guides.library.cornell.edu', 'CUL libraryguides');
+    $replace = array(
+      '!libraryguides_url' => $link
+    );
+    return '<p>'. t($txt, $replace) .'</p>';
+
+  }
+}
+
+/**
+ * Display Library Guides Index page
+ */
+function libraryguides_index_page() {
+   $content .= _fetch_libraryguides_index();
+   return $content;
+}
+
+/**
+ * Display Library Guides Category page
+ */
+function libraryguides_category_page($cid) {
+
+   $category_info = _get_category_info($cid);
+
+   drupal_set_title('Library Guides: ' . $category_info->name );
+   $content .= '<div id="libraryguides-list" >';
+   if ($category_info->haslibguide) {
+      $url = 'http://api.libguides.com/api_search.php?iid=41&search=' . urlencode($category_info->name) .'&type=category&break=br&more=false';
+      // drupal_set_message("calling: " . $url);
+      $response .= _libraryguides_fetch_guides($url);
+      if (empty($response)) {
+         $content .= "<h4>Library Guides</h4>";
+         $content .= 'No Library Guides available. <br>';
+      } else {
+         $content .= "<h4>Library Guides</h4>";
+         $content .= $response;
+      }
+   }
+
+   if ($category_info->hassubjguide) {
+      // $content .= "<div><a href='" . $category_info->otherurl . "'>Other Subject Guides</a></div>";
+      $content .= "<h4>Additional Subject Guides</h4>";
+      $content .= _get_subjectguide_content($category_info->otherurl);
+   }
+   $content .= '</div>';
+
+   $content .= '<div class="libraryguides-more">'
+         . l('CUL Library Guides', 'http://guides.library.cornell.edu')
+         .'</div>';
+
+   $themedcontent = theme('libraryguides', $content);
+
+   // fix breadcrumb
+   if (arg(0) == "node" && is_numeric(arg(1)) && arg(2) == NULL) {
+      $node = node_load(arg(1));
+   }
+
+   $breadcrumb = array();
+   $libraryguides_index = LIBRARYGUIDES_BASEPATH;
+   $breadcrumb[] = l(t('Library Guides'), $libraryguides_index );
+   $breadcrumb[] = l(t('Home'), NULL);
+   $breadcrumb = array_reverse($breadcrumb);
+   drupal_set_breadcrumb($breadcrumb);
+   return $content;
+}
+
+
+
+
+// THEME FUNCTIONS
+/**
+ * Implementation of hook_theme()
+ */
+function libraryguides_theme() {
+  return array(
+    'libraryguides' => array(
+      //'template' => 'libraryguides',
+      'arguments' => array('item' => null),
+    ),
+  );
+}
+
+/**
+ * Theme function for theming guides.
+ *
+ * @param $item The link content as a string.
+ * @param $url The original source of the quote, as a string.
+ * @return string An HTML themed string.
+ */
+function theme_libraryguides($item) {
+
+  $module_path = drupal_get_path('module', 'libraryguides');
+  $full_path = $module_path .'/libraryguides.css';
+
+  drupal_add_css($full_path);
+  drupal_add_js($module_path .'/libraryguides.js');
+
+  $output = '<div id="libraryguides-item">'. t($item)
+          . '</div>';
+  return $output;
+}
+
+/** Local Functions **/
+function libraryguides_searchform() {
+  $form['search'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Search Library Guides'),
+    '#description' => t("Enter a Search Term"),
+    '#default_value' => '',
+    '#size' => 40,
+    '#maxlength' => 255
+  );
+  $form['submit'] = array(
+      '#type' => 'submit',
+     '#value' => t('Search'),
+
+  );
+  variable_set('libraryguides_search_status', 'rendered');
+  variable_set('libraryguides_search_url', '');
+  return $form;
+}
+
+
+// validate just returns true for now
+function libraryguides_searchform_validate($form, &$form_state) {
+
+  if ($form_state['values']['search'] == '') {
+    form_set_error('', t('You must select a search term.'));
+  }
+
+  variable_set('libraryguides_search_status', 'validated');
+
+}
+
+function libraryguides_searchform_submit($form, &$form_state) {
+
+   // drupal_set_message(t('Thanks for filling out the form'));
+   $term = $form_state['values']['search'];
+   $url = 'http://api.libguides.com/api_search.php?iid=41&type=guides&break=br&more=false&search=' . $term;
+   $response .= _libraryguides_fetch_guides($url);
+   variable_set('libraryguides_search_status', 'submitted');
+   variable_set('libraryguides_search_url', $url);
+
+   $path = drupal_get_path_alias($_GET['q']);
+   $pos = strrpos($path, "/");
+   $search_results_path = substr($path, 0, $pos) . '/Search_Results';
+
+   drupal_goto($search_results_path);
+   return $response;
+}
+
+/**
+ * Retrieve information from the LibGuides  API.
+ *
+ * This makes an HTTP connection to the given URL, and retrieves
+ * html data, which it then attempts to format for display.
+ *
+ * @param $url URL to the libraryguides system.
+ * @return string String containing the bookshelf.
+ */
+function _libraryguides_fetch_guides($url) {
+
+  $http_result = drupal_http_request($url);
+  if ($http_result->code == 200) {
+
+      $data = $http_result->data;
+
+      //$out = "<pre>" . $data . "</pre>";
+      $out .= _libraryguides_block_content($data);
+      return $out;
+
+    // Otherwise we don't have any data
+  } else {
+      $msg = 'No content from %url.';
+      $vars = array( '%url' => $url );
+      watchdog('libraryguides', $msg, $vars, WATCHDOG_WARNING);
+      return t("LibGuides is not accessible.");
+  }
+}
+
+function _fetch_libraryguides_index() {
+   $out = '';
+   $out .= '<div>Select the subject heading below to view Library Guides';
+   $out .= ' for a subject area.  </div>';
+   $out .= '<div><br /></div>';
+
+   $result = db_query('SELECT * from {libraryguides_categories} ORDER BY name');
+   $out .= '<table cellpadding="0" cellspacing="0" width="98%">';
+   $count = 1;
+   $column = 1;
+   while ($r = db_fetch_object($result)) {
+     $category_path = '/' . LIBRARYGUIDES_BASEPATH . '/' . $r->cid;
+     if ($column == 1) {
+         $out .= '<tr>';
+         $out .= '<td><a href="'. $category_path .'"> ' . $r->name . '</a> </td>';
+     } else {
+        $out .= '<td><a href="'. $category_path .'"> ' . $r->name . '</a> </td>';
+        $out .= '</tr>';
+     }
+     $count += 1;
+     $column = $count % 2;
+   }
+   if ($column == 1) $out .= '<td>&nbsp;</td></tr>';
+   $out .= '</table>';
+   return $out;
+}
+
+function _get_category_info($cid) {
+   $sql = "SELECT * from {libraryguides_categories} WHERE cid=" . $cid ;
+   $result = db_query($sql);
+   $item = db_fetch_object($result);
+   return $item;
+}
+
+
+/**
+ * Generate the contents of a block from an html fragment.
+ * Given an html fragment, parse out the links and add
+ * a css class for theming
+ * @param $data some html
+ * @return string Formatted string.
+ */
+function _libraryguides_block_content($data) {
+
+  $attributes = array( 'class' => 'libraryguides-item' );
+  $linkarray = _parse_links($data);
+  for ($i = 0; $i < sizeof($linkarray[0]); $i++) {
+    $out .= "\n";
+    $href = $linkarray[2][$i];
+    $linktext =  $linkarray[1][$i];
+    $link = l($href, $linktext, $attributes);
+    $out .= $link;
+    $out .= "<br><br>\n";
+  }
+
+
+  return $out;
+}
+
+function _libraryguides_block_content_dom($data) {
+
+  $attributes = array( 'class' => 'libraryguides-item' );
+  $dom = DOMDocument::loadHTML($data);
+  foreach ($dom->getElementsByTagName('a') as $node) {
+    if ($node->hasAttribute('href')) {
+        $href = $node->getAttribute('href');
+        $linktext = $node->nodeValue;
+        $link = l($href, $linktext, $attributes);
+        $out .= $link ."<br>";
+    }
+  }
+
+  $moreclass = array( 'class' => 'libraryguides-url');
+  $out .= '<div class="libraryguides-more">'
+         . l('http://guides.library.cornell.edu', 'http://guides.library.cornell.edu', $moreclass)
+         .'</div>';
+  return $out;
+}
+
+function _parse_links($html) {
+
+   $pattern = "/<a href=\"(.*)\">(.*)<\/a>/";
+   preg_match_all($pattern, $html, $matches);
+   return $matches; // returns an array
+
+} // end function parse_links()
+
+function _get_libraryguides_category() {
+
+   if (arg(0) == "node" && is_numeric(arg(1)) && arg(2) == NULL) {
+       $node = node_load(arg(1));
+   }
+   $nid = $node->nid;
+   if (empty($nid)) return "";
+   $sql = 'SELECT field_category_value FROM content_type_libguide WHERE vid=' . $node->nid;
+   $result = db_query($sql);
+   $item = db_fetch_object($result);
+   // do we need to check if a taxonomy module is loaded to determine
+   // if the category value is in the term_data table or in the content_type_libguide
+   // table?
+   if (is_numeric($item->field_category_value)) {
+     $tid = $item->field_category_value;
+      $sql = 'SELECT name FROM term_data WHERE tid=' . $tid;
+      $result = db_query($sql);
+      $item = db_fetch_object($result);
+      return $item->name;
+
+   } else {
+      return $item->field_category_value;
+   }
+}
+
+
+function _get_subjectguide_content($path) {
+  if (strpos($path, "/") == 0) {
+      $path = substr($path,1);
+  }
+
+  $sql = "SELECT * FROM {url_alias} WHERE dst= '" . $path . "'" ;
+  $result = db_query($sql);
+  $alias = db_fetch_object($result);
+  $nid = str_replace('node/','',$alias->src);
+  $subjnode = node_load($nid);
+  $content = $subjnode->body;
+  return _libraryguides_block_content($content);
+
+}
+
+
+
+function myprintvar($variable) {
+   print "<br>";
+   print var_export($variable);
+   print "<br>";
+}
+
+
+
