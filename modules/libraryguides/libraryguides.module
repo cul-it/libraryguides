@@ -21,7 +21,7 @@ function libraryguides_menu() {
 
 
    $items[LIBRARYGUIDES_BASEPATH] = array(
-    'title' => 'Library Guides',
+    'title' => 'Library Guides Index',
     'description' => 'Display Library Guides Index.',
     'page callback' => 'libraryguides_index_page',
     'access arguments' => array('access content'),
@@ -42,7 +42,7 @@ function libraryguides_menu() {
    );
 
    $items['admin/settings/libraryguides'] = array(
-    'title' => 'LibGuides',
+    'title' => 'Library Guides',
     'description' => 'Configure Library Guides Categories.',
     'page callback' => 'libraryguides_settings_page',
     'access arguments' => $access,
@@ -55,6 +55,7 @@ function libraryguides_menu() {
     'page callback' => 'libraryguides_category_delete',
     'access arguments' => $access,
     'file' => 'libraryguides.admin.inc',
+    'type' => MENU_CALLBACK,
    );
    $items['admin/settings/libraryguides/edit'] = array(
     'title' => 'Edit Category',
@@ -62,6 +63,7 @@ function libraryguides_menu() {
     'page callback' => 'libraryguides_category_edit',
     'access arguments' => $access,
     'file' => 'libraryguides.admin.inc',
+    'type' => MENU_CALLBACK,
    );
 
    return $items;
