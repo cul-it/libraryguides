@@ -135,9 +135,9 @@ function libraryguides_category_page($cid) {
    }
    $content .= '</div>';
 
-   $content .= '<div class="libraryguides-more">'
-         . l('CUL Library Guides', 'http://guides.library.cornell.edu')
-         .'</div>';
+   //$content .= '<div class="libraryguides-more">'
+   //      . l('CUL Library Guides', 'http://guides.library.cornell.edu')
+   //      .'</div>';
 
    $themedcontent = theme('libraryguides', $content);
 
