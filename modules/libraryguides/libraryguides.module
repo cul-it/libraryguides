@@ -21,8 +21,8 @@ function libraryguides_menu() {
 
 
    $items[LIBRARYGUIDES_BASEPATH] = array(
-    'title' => 'Library Guides Index',
-    'description' => 'Display Library Guides Index.',
+    'title' => 'Library Guides',
+    'description' => 'Display Library Guides',
     'page callback' => 'libraryguides_index_page',
     'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
