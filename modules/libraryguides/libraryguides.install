@@ -26,6 +26,17 @@ function libraryguides_schema() {
     'primary key' => array('cid'),
   );
 
+  $schema['libraryguides_subguides'] = array(
+    'description' => t('A table containing non libraryguides guides.'),
+    'fields' => array(
+      'gid' => array('type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE, 'description' => t('The primary id for the guide. ')),
+      'cid' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'description' => t('Category ID')),
+      'title' => array('type' => 'text', 'size' => 'normal', 'not null' => TRUE, 'description' => t('The Guide Title.')),
+      'url' => array('type' => 'text', 'size' => 'normal', 'not null' => TRUE, 'description' => t('The Guide URL.')),
+    ),
+    'primary key' => array('gid'),
+  );
+
   return $schema;
 }
 
@@ -91,6 +102,58 @@ function libraryguides_update_2() {
     if ($row->haslibguide == 'Y') {  $newlg = 1; } else { $newlg = 0;	}
     if ($row->hassubjguide == 'Y') {  $newsg = 1; } else { $newsg = 0;	}
      $res = db_query("UPDATE {libguides_categories} SET haslibguide='%d', hassubjguide='%d'", $newlg, $newsg );
+  }
+  drupal_set_message("The schema for libraryguides module has been updated.  ");
+  return $ret;
+
+}
+
+/*
+ * remove haslibguides, hasnonlibguides, url, otherurl fields
+ * add libraryguides_subguides table
+ */
+function libraryguides_update_3() {
+  // get current data
+  $result = db_query("SELECT * from {libraryguides_categories}");
+
+   $ret = array();
+
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      $ret[] = update_sql("ALTER TABLE {libraryguides_categories} DROP COLUMN haslibguide");
+      $ret[] = update_sql("ALTER TABLE {libraryguides_categories} DROP COLUMN hassubjguide");
+      $ret[] = update_sql("ALTER TABLE {libraryguides_categories} DROP COLUMN url");
+      $ret[] = update_sql("ALTER TABLE {libraryguides_categories} DROP COLUMN otherurl");
+      // Create new non libguides guides table
+      $ret[] = update_sql("CREATE TABLE {libraryguides_subguides} (
+         gid int(10) unsigned NOT NULL auto_increment,
+         cid int(10) unsigned NOT NULL default '0',
+         title varchar(100) default '',
+         url varchar(255) default '0',
+         PRIMARY KEY gid (gid)
+      )");
+
+      break;
+  }
+  drupal_set_message("The schema for libraryguides module has been updated.  ");
+  return $ret;
+
+}
+
+/*
+ * add tag field to libraryguides_categories
+ */
+function libraryguides_update_4() {
+
+   $ret = array();
+
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      $ret[] = update_sql("ALTER TABLE {libraryguides_categories} ADD COLUMN tag VARCHAR(60)  default '' ");
+
+      break;
   }
   drupal_set_message("The schema for libraryguides module has been updated.  ");
   return $ret;

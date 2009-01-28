@@ -16,19 +16,39 @@
  *   drupal_get_form() function.
  */
 function libraryguides_settings_page($op = NULL) {
-   $output .= '<p>Add a new category or delete one of the existing categories below.</p>';
-   $output = drupal_get_form('libraryguides_settings_form');
+
    // get existing categories
+   $output .= '<p>This page is used to add or edit Library Guides Categories.</p>';
    $output .= '<br />';
    $output .= '<h2 style="border-top: 2px solid #ccc; border-bottom: 2px solid #ccc;">Categories</h2>';
    $output .= get_libraryguides_categories_html();
+   $output .= '<h2>Add a new category.</h2>';
+   $output .= drupal_get_form('libraryguides_settings_form');
    return $output;
 }
 
 function libraryguides_category_edit($op = NULL) {
-   $output .= '<p>Edit Category.</p>';
-   $output = drupal_get_form('libraryguides_settings_edit_form');
 
+   $cid = arg(5);
+
+   $output .= '<p>The page is used to edit information related to a Library Guides Category. ' .
+       'For each category, the Library Guides module will pull in guides created in the Springshare ' .
+       'LibGuides system automatically.  Additional Non-LibGuides guides can be added here. </p>';
+   $output .= drupal_get_form('libraryguides_settings_edit_form');
+
+   // get existing categories
+   $output .= '<br />';
+   $output .= '<h2 style="border-top: 2px solid #ccc; border-bottom: 2px solid #ccc;">Additional Subject Guides</h2>';
+   $output .= get_libraryguides_subguides_html($cid);
+   $output .= '<h2 style="border-top: 2px solid #ccc; border-bottom: 2px solid #ccc;">Add Non-LibGuides Subject Guides</h2>';
+   $output .= drupal_get_form('libraryguides_settings_guide_form');
+   return $output;
+}
+
+function libraryguides_category_delete($op = NULL) {
+  $cid = arg(5);
+   $output .= '<p>Confirm Delete Category.</p>';
+   $output .= drupal_get_form('libraryguides_settings_form', $cid);
    // get existing categories
    $output .= '<br />';
    $output .= '<h2 style="border-top: 2px solid #ccc; border-bottom: 2px solid #ccc;">Categories</h2>';
@@ -36,13 +56,12 @@ function libraryguides_category_edit($op = NULL) {
    return $output;
 }
 
-function libraryguides_category_delete($op = NULL) {
-   $output .= '<p>Confirm Delete Category.</p>';
-   $output = drupal_get_form('libraryguides_settings_form');
-   // get existing categories
-   $output .= '<br />';
-   $output .= '<h2 style="border-top: 2px solid #ccc; border-bottom: 2px solid #ccc;">Categories</h2>';
-   $output .= get_libraryguides_categories_html();
+function libraryguides_guide_edit($op = NULL) {
+
+   $gid = arg(5);
+   $output .= '<p>The page is used to edit the Title and URL for a non-libguides Subject Guide' .
+       ' </p>';
+   $output .= drupal_get_form('libraryguides_settings_guide_edit_form');
    return $output;
 }
 
@@ -55,8 +74,7 @@ function libraryguides_category_delete($op = NULL) {
  */
 function libraryguides_settings_form() {
   drupal_add_js(drupal_get_path('module', 'libraryguides') .'/libraryguides-admin.js', 'module');
-  drupal_add_js('if (Drupal.jsEnabled) { hideUrl(); }','inline','footer');
-  drupal_add_js('if (Drupal.jsEnabled) { hideOtherUrl(); }','inline','footer');
+
   $form['name'] = array(
     '#type' => 'textfield',
     '#title' => t('Category'),
@@ -64,35 +82,15 @@ function libraryguides_settings_form() {
     '#maxlength' => 255,
     '#default_value' => ''
   );
-  $form['haslibguide'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Category has libraryguides available'),
-    '#default_value' => variable_get('haslibguide', FALSE),
-    '#description' => t('Select if this category has libraryguides available.')
-  );
 
-  $form['hassubjguide'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Category has Non-libraryguides available'),
-    '#default_value' => variable_get('hassubjguide', FALSE),
-    '#description' => t('Select if this category has non-libraryguides available.'),
-    '#attributes' => array('onClick' => 'toggleOtherUrl();' )
-  );
-  $form['url'] = array(
+  $form['tag'] = array(
     '#type' => 'textfield',
-    '#title' => t('libraryguides Url'),
-    '#default_value' => '',
+    '#title' => t('Course Guides Tag'),
+    '#default_value' => $category->tag,
     '#size' => 100,
     '#maxlength' => 255
   );
 
-  $form['otherurl'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Non libraryguides url'),
-    '#default_value' => '',
-    '#size' => 100,
-    '#maxlength' => 255
-  );
 
   $form['update'] = array(
     '#type' => 'submit',
@@ -104,16 +102,19 @@ function libraryguides_settings_form() {
   return $form;
 }
 
+/**
+ * Validates that a Category contains a name
+ */
 function libraryguides_settings_form_validate($form, &$form_state) {
    if ($form_state['values']['name'] == '') {
-      form_set_error('name', t('You must provide a category'));
+      form_set_error('name', t('You must provide a category name'));
    }
 }
 
 
 
 /**
- * Function saves the options set by the user in the FAQ Settings - General tab.
+ * Function saves a Library Guides Category
  *
  * @param $form
  *   Array, containing the form structure.
@@ -124,22 +125,13 @@ function libraryguides_settings_form_submit($form, &$form_state) {
   $libraryguides_base_path = LIBRARYGUIDES_BASEPATH;
 
   if ($form_state['values']['op'] == t('Save Category')) {
-     //if ($form_state['values']['haslibguide'] == '1' ) {
-        $name = $form_state['values']['name'];
-        // replace spaces with underscores, squeeze out commas
-        $category = str_replace(' ','_',$name);
-        $category = str_replace(',','',$category);
-        $form_state['values']['url'] = '/' . $libraryguides_base_path . '/' . $category;
-     //}
 
-     //drupal_set_message("url: " . $form_state['values']['url']);
-     $result = db_query("INSERT INTO {libraryguides_categories} (cid, name, haslibguide, hassubjguide, url, otherurl) VALUES('%d', '%s', '%d' , '%d' ,'%s', '%s')",
+     $name = $form_state['values']['name'];
+     $tag = $form_state['values']['tag'];
+     $result = db_query("INSERT INTO {libraryguides_categories} (cid, name, tag) VALUES('%d', '%s', '%s')",
         NULL,
         $form_state['values']['name'],
-        $form_state['values']['haslibguide'],
-        $form_state['values']['hassubjguide'],
-        $form_state['values']['url'],
-        $form_state['values']['otherurl']);
+        $form_state['values']['tag']);
      drupal_set_message(t('Category has been added.'));
   }
 }
@@ -152,12 +144,11 @@ function libraryguides_settings_form_submit($form, &$form_state) {
  *   converted to HTML.
  */
 function libraryguides_settings_edit_form() {
+  $cid = arg(5);
   drupal_add_js(drupal_get_path('module', 'libraryguides') .'/libraryguides-admin.js', 'module');
-  drupal_add_js('if (Drupal.jsEnabled) { showUrl(); }','inline','footer');
-  drupal_add_js('if (Drupal.jsEnabled) { showOtherUrl(); }','inline','footer');
-  $cid = arg(4);
-  $category = get_libraryguides_category($cid);
 
+
+  $category = get_libraryguides_category($cid);
 
   $form = array();
   $form['cid'] = array(
@@ -172,38 +163,15 @@ function libraryguides_settings_edit_form() {
     '#maxlength' => 255,
     '#default_value' => $category->name
   );
-  $form['haslibguide'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Category has libraryguides available'),
-    '#default_value' => $category->haslibguide,
-    '#description' => t('Select if this category has libraryguides available.'),
-    '#attributes' => array('onClick' => 'toggleUrl();' )
-  );
 
-
-  $form['hassubjguide'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Category has Non-Libguides available'),
-    '#default_value' => $category->hassubjguide,
-    '#description' => t('Select if this category has non-libraryguides available.'),
-    '#attributes' => array('onClick' => 'toggleOtherUrl();' )
-  );
-
-  $form['url'] = array(
+  $form['tag'] = array(
     '#type' => 'textfield',
-    '#title' => t('url'),
-    '#default_value' => $category->url,
+    '#title' => t('Course Guides Tag'),
+    '#default_value' => $category->tag,
     '#size' => 100,
     '#maxlength' => 255
   );
 
-  $form['otherurl'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Non libraryguides url'),
-    '#default_value' => $category->otherurl,
-    '#size' => 100,
-    '#maxlength' => 255
-  );
 
   $form['update'] = array(
     '#type' => 'submit',
@@ -216,7 +184,7 @@ function libraryguides_settings_edit_form() {
 }
 
 /**
- * Function saves the options set by the user in the FAQ Settings - General tab.
+ * Updates a Category
  *
  * @param $form
  *   Array, containing the form structure.
@@ -227,41 +195,241 @@ function libraryguides_settings_edit_form_submit($form, &$form_state) {
 
   if ($form_state['values']['op'] == t('Update Category')) {
 
-     //drupal_set_message("Updating url: " . $form_state['values']['url']);
-     $result = db_query("UPDATE {libraryguides_categories} SET name='%s', haslibguide='%d', hassubjguide='%d', url='%s', otherurl='%s' WHERE cid=%d",
+     $result = db_query("UPDATE {libraryguides_categories} SET name='%s', tag='%s' WHERE cid=%d",
         $form_state['values']['name'],
-        $form_state['values']['haslibguide'],
-        $form_state['values']['hassubjguide'],
-        $form_state['values']['url'],
-        $form_state['values']['otherurl'],
+        $form_state['values']['tag'],
         $form_state['values']['cid']
         );
      drupal_set_message(t('Category has been updated.'));
   }
 }
 
+/**
+ * Define a form to provide a new guide
+ *
+ * @return
+ *   The general settings form code stored in the $form variable, before
+ *   converted to HTML.
+ */
+function libraryguides_settings_guide_form() {
+  $cid = arg(5);
+
+  drupal_add_js(drupal_get_path('module', 'libraryguides') .'/libraryguides-admin.js', 'module');
+
+  $form['cid'] = array(
+    '#type' => 'hidden',
+    '#value' => $cid
+  );
+
+  $form['title'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Title'),
+    '#size' => 60,
+    '#maxlength' => 255,
+    '#default_value' => ''
+  );
+
+  $form['url'] = array(
+    '#type' => 'textfield',
+    '#title' => t('URL'),
+    '#default_value' => '',
+    '#size' => 100,
+    '#maxlength' => 255
+  );
+
+
+  $form['update'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save Guide'),
+    '#weight' => 3,
+    '#submit' => array('libraryguides_settings_guide_form_submit'),
+  );
+
+  return $form;
+}
+
+/**
+ * Validates that a Guide contains a title and url
+ */
+function libraryguides_settings_guide_form_validate($form, &$form_state) {
+   if ($form_state['values']['title'] == '') {
+      form_set_error('title', t('You must provide a title'));
+   }
+   if ($form_state['values']['url'] == '') {
+      form_set_error('url', t('You must provide a url'));
+   }
+}
+
+
+
+/**
+ * Function saves a Library Guides Guide
+ *
+ * @param $form
+ *   Array, containing the form structure.
+ * @param &$form_state
+ *   $form_state['values'] stores the submitted values from the form.
+ */
+function libraryguides_settings_guide_form_submit($form, &$form_state) {
+  $libraryguides_base_path = LIBRARYGUIDES_BASEPATH;
+
+  if ($form_state['values']['op'] == t('Save Guide')) {
+     $cid = $form_state['values']['cid'];
+     $title = $form_state['values']['title'];
+     $url = $form_state['values']['url'];
+
+     $result = db_query("INSERT INTO {libraryguides_subguides} (gid, cid, title, url) VALUES('%d', '%d', '%s', '%s')",
+        NULL,
+        $form_state['values']['cid'],
+        $form_state['values']['title'],
+        $form_state['values']['url']);
+     drupal_set_message(t('Guide has been added.'));
+
+  }
+}
+
+/**
+ * Define a form to edit a non libguide guide
+ *
+ * @return
+ *   The general settings form code stored in the $form variable, before
+ *   converted to HTML.
+ */
+function libraryguides_settings_guide_edit_form() {
+  $gid = arg(5);
+
+  drupal_add_js(drupal_get_path('module', 'libraryguides') .'/libraryguides-admin.js', 'module');
+
+  $guide = get_libraryguides_subguide($gid);
+
+  $form = array();
+  $form['gid'] = array(
+    '#type' => 'hidden',
+    '#value' => $guide->gid
+  );
+
+  $form['cid'] = array(
+    '#type' => 'hidden',
+    '#value' => $guide->cid
+  );
+
+  $form['title'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Title'),
+    '#size' => 60,
+    '#maxlength' => 255,
+    '#default_value' => $guide->title
+  );
+
+  $form['url'] = array(
+    '#type' => 'textfield',
+    '#title' => t('URL'),
+    '#default_value' => $guide->url,
+    '#size' => 100,
+    '#maxlength' => 255
+  );
+
+
+  $form['update'] = array(
+    '#type' => 'submit',
+    '#value' => t('Update Guide'),
+    '#weight' => 3,
+    '#submit' => array('libraryguides_settings_guide_edit_form_submit'),
+  );
+
+  return $form;
+}
+
+/**
+ * Validates that a Guide contains a title and a url
+ */
+function libraryguides_settings_guide_edit_form_validate($form, &$form_state) {
+   if ($form_state['values']['title'] == '') {
+      form_set_error('title', t('You must provide a title'));
+   }
+   if ($form_state['values']['url'] == '') {
+      form_set_error('url', t('You must provide a url'));
+   }
+}
+
+/**
+ * Updates a Non-LibGuide Guide
+ *
+ * @param $form
+ *   Array, containing the form structure.
+ * @param &$form_state
+ *   $form_state['values'] stores the submitted values from the form.
+ */
+function libraryguides_settings_guide_edit_form_submit($form, &$form_state) {
+
+  if ($form_state['values']['op'] == t('Update Category')) {
+     $result = db_query("UPDATE {libraryguides_subguides} SET title='%s', url='%s' WHERE gid=%d",
+        $form_state['values']['title'],
+        $form_state['values']['url'],
+        $form_state['values']['gid']
+        );
+     drupal_set_message(t('Guide has been updated.'));
+  }
+}
+
+/**
+ * Returns a list of library guides categories
+ */
 function get_libraryguides_categories_html() {
   $out = '';
   $result = db_query('SELECT * from {libraryguides_categories} ORDER BY name');
-  $out .= '<table cellpadding="3" cellspacing="0" border="1" width="98%">';
+  $out .= '<table cellpadding="2" cellspacing="0" border="1" width="98%">';
   //$out .= '<tr><th width="80%" align="left">Category</th><th width="10%">&nbsp;</th><th width="10%">&nbsp;</th></tr>';
 
    while ($r = db_fetch_object($result)) {
      $out .= '<tr>';
       $out .= '<td width="80%">' . $r->name . ' </td>';
 
-      $out .= '<td width="10%"><a href="/admin/settings/libraryguides/edit/' . $r->cid .' ">Edit</a></td>';
-      // $out .= '<td width="10%"><a href="/admin/settings/libraryguides/delete/' . $r->cid .' ">Delete</a></td>';
+      $out .= '<td width="10%"><a href="/admin/settings/libraryguides/category/edit/' . $r->cid .' ">Edit</a></td>';
+      // $out .= '<td width="10%"><a href="/admin/settings/libraryguides/category/delete/' . $r->cid .' ">Delete</a></td>';
       $out .= '</tr>';
    }
    $out .= '</table>';
    return $out;
 }
 
+/*
+ * get information for a specific library guides category
+ */
 function get_libraryguides_category($cid) {
    $result = db_query('SELECT * FROM {libraryguides_categories} WHERE cid=' . $cid);
    $category = db_fetch_object($result);
    return $category;
 }
+
+/**
+ * Returns a list of non-library guides by category
+ */
+function get_libraryguides_subguides_html($cid) {
+  $out = '';
+  $result = db_query('SELECT * from {libraryguides_subguides} WHERE cid=' . $cid . ' ORDER BY title ');
+  $out .= '<table cellpadding="2" cellspacing="0" border="1" width="98%">';
+
+   while ($r = db_fetch_object($result)) {
+      $out .= '<tr>';
+      $out .= '<td width="80%">' . $r->title . ' </td>';
+      $out .= '<td width="10%"><a href="/admin/settings/libraryguides/guide/edit/' . $r->gid .' ">Edit</a></td>';
+      $out .= '</tr>';
+   }
+   $out .= '</table>';
+   return $out;
+}
+
+/*
+ * get information for a specific library guides category
+ */
+function get_libraryguides_subguide($gid) {
+
+   $result = db_query('SELECT * FROM {libraryguides_subguides} WHERE gid=' . $gid);
+   $guide = db_fetch_object($result);
+   return $guide;
+}
+
+
 
 
