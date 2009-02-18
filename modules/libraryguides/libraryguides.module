@@ -6,7 +6,7 @@
  * Module for fetching data from guides.library.cornell.edu
  * This module provides block content retrieved from a
  * guides.library.cornell.edu site
- * @see http://guides.library.cornell.edu
+ * see http://guides.library.cornell.edu
  */
 
 // set LIBRARYGUIDES_BASEPATH to the path you want to use for Library Guides
@@ -14,88 +14,92 @@ define(LIBRARYGUIDES_BASEPATH, 'resrch/libguides');
 define(LIBRARYGUIDES_CATEGORY_PATH, 'resrch/libguides/%');
 
 
- /*
-  * Implementation of hook_menu()
-  */
+/*
+ * Implementation of hook_menu().
+ */
 function libraryguides_menu() {
-   $items = array();
-   $access = array('administer libraryguides');
+  $items = array();
+  $access = array('administer libraryguides');
 
 
-   $items[LIBRARYGUIDES_BASEPATH] = array(
+  $items[LIBRARYGUIDES_BASEPATH] = array(
     'title' => 'Library Guides',
     'description' => 'Display Library Guides',
     'page callback' => 'libraryguides_index_page',
     'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
-   );
-   // get an index for the arry we will pass for the page callback
-   // the wildcard card must be at the end of the path
-   $array_index = substr_count(LIBRARYGUIDES_CATEGORY_PATH, "/");
+  );
+  // get an index for the arry we will pass for the page callback
+  // the wildcard card must be at the end of the path
+  $array_index = substr_count(LIBRARYGUIDES_CATEGORY_PATH, "/");
 
 
-   $items[LIBRARYGUIDES_CATEGORY_PATH] = array(
+  $items[LIBRARYGUIDES_CATEGORY_PATH] = array(
     'title' => 'Library Guides',
     'description' => 'Display Library Guides for a category.',
     'page callback' => 'libraryguides_category_page',
     'page arguments' => array($array_index),
     'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
-   );
+  );
 
-   $items['admin/settings/libraryguides'] = array(
+  $items['admin/settings/libraryguides'] = array(
     'title' => 'Library Guides',
     'description' => 'Configure Library Guides Categories.',
     'page callback' => 'libraryguides_settings_page',
     'access arguments' => $access,
     'file' => 'libraryguides.admin.inc',
-   );
+  );
 
-   $items['admin/settings/libraryguides/category/delete'] = array(
+  $items['admin/settings/libraryguides/category/delete'] = array(
     'title' => 'Delete Category',
     'description' => 'Delete Library Guides Category',
     'page callback' => 'libraryguides_category_delete',
     'access arguments' => $access,
     'file' => 'libraryguides.admin.inc',
     'type' => MENU_CALLBACK,
-   );
+  );
 
-   $items['admin/settings/libraryguides/category/edit'] = array(
+  $items['admin/settings/libraryguides/category/edit'] = array(
     'title' => 'Edit Category',
     'description' => 'Edit Library Guides Category',
     'page callback' => 'libraryguides_category_edit',
     'access arguments' => $access,
     'file' => 'libraryguides.admin.inc',
     'type' => MENU_CALLBACK,
-   );
+  );
 
-   $items['admin/settings/libraryguides/guide/add'] = array(
+  $items['admin/settings/libraryguides/guide/add'] = array(
     'title' => 'Add Non-LibGuides Guide',
     'description' => 'Add Non-LibGuides Guide',
     'page callback' => 'libraryguides_guide_add',
     'access arguments' => $access,
     'file' => 'libraryguides.admin.inc',
     'type' => MENU_CALLBACK,
-   );
-
-
-
-   $items['admin/settings/libraryguides/guide/edit/%'] = array(
+  );
+  $items['admin/settings/libraryguides/guide/edit/%'] = array(
     'title' => 'Edit Non-LibGuides Guide',
     'description' => 'Edit Non-LibGuides Guide',
     'page callback' => 'libraryguides_guide_edit',
     'access arguments' => $access,
     'file' => 'libraryguides.admin.inc',
     'type' => MENU_CALLBACK,
-   );
+  );
+  $items['admin/settings/libraryguides/guide/delete'] = array(
+    'title' => 'Delete Guide',
+    'description' => 'Delete Non-Libguides guide',
+    'page callback' => 'libraryguides_guide_delete',
+    'access arguments' => $access,
+    'file' => 'libraryguides.admin.inc',
+    'type' => MENU_CALLBACK,
+  );
 
-
-   return $items;
+  return $items;
 
 }
 
 /**
- * Implementation of hook_perm()
+ * Implementation of hook_perm().
  *
  */
 function libraryguides_perm() {
@@ -103,7 +107,7 @@ function libraryguides_perm() {
 }
 
 /**
- * Implementation of hook_help()
+ * Implementation of hook_help().
  */
 function libraryguides_help($path, $arg) {
 
@@ -121,7 +125,7 @@ function libraryguides_help($path, $arg) {
 }
 
 /**
- * Implementation of hook_init
+ * Implementation of hook_init().
  */
 function libraryguides_init() {
   $module_path = drupal_get_path('module', 'libraryguides');
@@ -155,8 +159,7 @@ function libraryguides_theme() {
  * @return string An HTML themed string.
  */
 function theme_libraryguides($item) {
-  $output = '<div id="libraryguides-item">'. t($item)
-          . '</div>';
+  $output = '<div id="libraryguides-item">'. t($item) .'</div>';
   return $output;
 }
 
@@ -167,8 +170,7 @@ function theme_libraryguides($item) {
  * @return string An HTML themed string.
  */
 function theme_libraryguides_heading($text) {
-
-  $output = "<h3 class='libraryguides_heading'>". t($text) . "</h3>\n";
+  $output = "<h3 class='libraryguides_heading'>". t($text) ."</h3>\n";
   return $output;
 }
 
@@ -182,15 +184,14 @@ function theme_libraryguides_heading($text) {
  */
 function theme_libraryguides_links($data) {
 
-   foreach ($data as $key => $value) {
+  foreach ($data as $key => $value) {
+    $output .= "\n";
+    $link = l($key, $value, array('attributes' => array('class' => "libraryguides_link")));
+    $output .= $link;
+    $output .= "<br /><br />\n";
+  }
 
-      $output .= "\n";
-      $link = l($key, $value, array('attributes' => array('class' => "libraryguides_link")));
-      $output .= $link;
-      $output .= "<br /><br />\n";
-   }
-
-   return $output;
+  return $output;
 }
 
 
@@ -199,8 +200,8 @@ function theme_libraryguides_links($data) {
  */
 function libraryguides_index_page() {
   $content .= '<h1 class="title">Library Guides Categories</h1>';
-   $content .= _fetch_libraryguides_index();
-   return $content;
+  $content .= _fetch_libraryguides_index();
+  return $content;
 }
 
 /**
@@ -208,45 +209,44 @@ function libraryguides_index_page() {
  */
 function libraryguides_category_page($cid) {
 
-   $category_info = _get_category_info($cid);
+  $category_info = _get_category_info($cid);
 
-   drupal_set_title('Library Guides');
-   $content .= theme('libraryguides_heading', $category_info->name);
+  drupal_set_title('Library Guides');
+  $content .= theme('libraryguides_heading', $category_info->name);
+
+  $categoryurl = 'http://api.libguides.com/api_search.php?iid=41&search='. urlencode($category_info->name) .'&type=category&break=br&more=false';
+  $tagurl = 'http://api.libguides.com/api_search.php?iid=41&search='. urlencode($category_info->tag) .'&type=tags&break=br&more=false';
+
+  // Get Guides which match this category from LibGuides system
+  $guides = _libraryguides_fetch_guides($categoryurl);
+  // Get Non-Libguides guides
+  $otherguides = _libraryguides_fetch_nonlibguides($category_info->cid);
+
+  $allguides = array_merge($guides, $otherguides);
+  // sort by the key (aka the title)
+  ksort($allguides);
+  $content .= theme('libraryguides_links', $allguides);
+
+  // Get Course Guides by tag
+  $courseguides = _libraryguides_fetch_guides($tagurl);
+  if (sizeof($courseguides) > 0) {
+    $content .= theme('libraryguides_heading', 'Related Course Guides');
+    $content .= theme('libraryguides_links', $courseguides);
+  }
 
 
-   $categoryurl = 'http://api.libguides.com/api_search.php?iid=41&search=' . urlencode($category_info->name) .'&type=category&break=br&more=false';
-   $tagurl = 'http://api.libguides.com/api_search.php?iid=41&search=' . urlencode($category_info->tag) .'&type=tags&break=br&more=false';
+  // fix breadcrumb
+  if (arg(0) == "node" && is_numeric(arg(1)) && arg(2) == NULL) {
+    $node = node_load(arg(1));
+  }
 
-   // Get Guides which match this category from LibGuides system
-   $guides = _libraryguides_fetch_guides($categoryurl);
-   // Get Non-Libguides guides
-   $otherguides = _libraryguides_fetch_nonlibguides($category_info->cid);
-
-   $allguides = array_merge($guides, $otherguides);
-   // sort by the key (aka the title)
-   ksort($allguides);
-   $content .= theme('libraryguides_links', $allguides);
-
-   // Get Course Guides by tag
-   $courseguides = _libraryguides_fetch_guides($tagurl);
-   if (sizeof($courseguides) > 0) {
-      $content .= theme('libraryguides_heading', 'Related Course Guides');
-      $content .= theme('libraryguides_links', $courseguides);
-   }
-
-
-   // fix breadcrumb
-   if (arg(0) == "node" && is_numeric(arg(1)) && arg(2) == NULL) {
-      $node = node_load(arg(1));
-   }
-
-   $breadcrumb = array();
-   $libraryguides_index = LIBRARYGUIDES_BASEPATH;
-   $breadcrumb[] = l(t('Library Guides'), $libraryguides_index );
-   $breadcrumb[] = l(t('Home'), NULL);
-   $breadcrumb = array_reverse($breadcrumb);
-   drupal_set_breadcrumb($breadcrumb);
-   return $content;
+  $breadcrumb = array();
+  $libraryguides_index = LIBRARYGUIDES_BASEPATH;
+  $breadcrumb[] = l(t('Library Guides'), $libraryguides_index );
+  $breadcrumb[] = l(t('Home'), NULL);
+  $breadcrumb = array_reverse($breadcrumb);
+  drupal_set_breadcrumb($breadcrumb);
+  return $content;
 }
 
 function libraryguides_searchform() {
@@ -275,26 +275,25 @@ function libraryguides_searchform_validate($form, &$form_state) {
   if ($form_state['values']['search'] == '') {
     form_set_error('', t('You must select a search term.'));
   }
-
   variable_set('libraryguides_search_status', 'validated');
 
 }
 
 function libraryguides_searchform_submit($form, &$form_state) {
 
-   // drupal_set_message(t('Thanks for filling out the form'));
-   $term = $form_state['values']['search'];
-   $url = 'http://api.libguides.com/api_search.php?iid=41&type=guides&break=br&more=false&search=' . $term;
-   $response .= _libraryguides_fetch_guides($url);
-   variable_set('libraryguides_search_status', 'submitted');
-   variable_set('libraryguides_search_url', $url);
+  // drupal_set_message(t('Thanks for filling out the form'));
+  $term = $form_state['values']['search'];
+  $url = 'http://api.libguides.com/api_search.php?iid=41&type=guides&break=br&more=false&search='. $term;
+  $response .= _libraryguides_fetch_guides($url);
+  variable_set('libraryguides_search_status', 'submitted');
+  variable_set('libraryguides_search_url', $url);
 
-   $path = drupal_get_path_alias($_GET['q']);
-   $pos = strrpos($path, "/");
-   $search_results_path = substr($path, 0, $pos) . '/Search_Results';
-
-   drupal_goto($search_results_path);
-   return $response;
+  $path = drupal_get_path_alias($_GET['q']);
+  $pos = strrpos($path, "/");
+  //$search_results_path = substr($path, 0, $pos) .'/Search_Results';
+  $search_results_path = drupal_substr($path, 0, $pos) .'/Search_Results';
+  drupal_goto($search_results_path);
+  return $response;
 }
 
 
@@ -312,26 +311,25 @@ function _libraryguides_fetch_guides($url) {
   $http_result = drupal_http_request($url);
   if ($http_result->code == 200) {
 
-      $data = $http_result->data;
+    $data = $http_result->data;
 
-      $guidesarray = array();
-      @$dom = DOMDocument::loadHTML($data);
+    $guidesarray = array();
+    @$dom = DOMDocument::loadHTML($data);
 
-      foreach ($dom->getElementsByTagName('a') as $node) {
-         if ($node->hasAttribute('href')) {
-           $href = $node->getAttribute('href');
-           $title = $node->nodeValue;
-           // print $title . ':' . $href . '<br />';
-           $guidesarray[$title] = $href;
-         }
+    foreach ($dom->getElementsByTagName('a') as $node) {
+      if ($node->hasAttribute('href')) {
+        $href = $node->getAttribute('href');
+        $title = $node->nodeValue;
+        // print $title . ':' . $href . '<br />';
+        $guidesarray[$title] = $href;
       }
-      return $guidesarray;
-
-    // Otherwise we don't have any data
-  } else {
-      $msg = 'No content from %url.';
-      $vars = array( '%url' => $url );
-      watchdog('libraryguides', $msg, $vars, WATCHDOG_WARNING);
+    }
+    return $guidesarray;
+  }
+  else { // Otherwise we don't have any data
+    $msg = 'No content from %url.';
+    $vars = array( '%url' => $url );
+    watchdog('libraryguides', $msg, $vars, WATCHDOG_WARNING);
   }
 }
 
@@ -345,48 +343,48 @@ function _libraryguides_fetch_guides($url) {
  * @return string String containing the bookshelf.
  */
 function _libraryguides_fetch_nonlibguides($cid) {
-  $result = db_query("SELECT * from {libraryguides_subguides} WHERE cid='" . $cid . "'");
+  $result = db_query("SELECT * from {libraryguides_subguides} WHERE cid='". $cid ."'");
   $otherguides = array();
   while ($r = db_fetch_object($result)) {
-     $otherguides[$r->title] =  $r->url;
+    $otherguides[$r->title] =  $r->url;
   }
-
-   return $otherguides;
+  return $otherguides;
 }
 
 function _fetch_libraryguides_index() {
-   $out = '';
-   $out .= '<div>Select a category below to view Library Guides';
-   $out .= ' for a subject area.  </div>';
-   $out .= '<div><br /></div>';
+  $out = '';
+  $out .= '<div>Select a category below to view Library Guides';
+  $out .= ' for a subject area.  </div>';
+  $out .= '<div><br /></div>';
 
-   $result = db_query('SELECT * from {libraryguides_categories} ORDER BY name');
-   $out .= '<table cellpadding="0" cellspacing="0" width="98%">';
-   $count = 1;
-   $column = 1;
-   while ($r = db_fetch_object($result)) {
-     $category_path = '/' . LIBRARYGUIDES_BASEPATH . '/' . $r->cid;
+  $result = db_query('SELECT * from {libraryguides_categories} ORDER BY name');
+  $out .= '<table cellpadding="0" cellspacing="0" width="98%">';
+  $count = 1;
+  $column = 1;
+  while ($r = db_fetch_object($result)) {
+    $category_path = '/'. LIBRARYGUIDES_BASEPATH .'/'. $r->cid;
 
-     if ($column == 1) {
-         $out .= '<tr>';
-         $out .= '<td><a class="libraryguides_link" href="'. $category_path .'"> ' . $r->name . '</a> </td>';
-     } else {
-        $out .= '<td><a class="libraryguides_link" href="'. $category_path .'"> ' . $r->name . '</a> </td>';
-        $out .= '</tr>';
-     }
-     $count += 1;
-     $column = $count % 2;
-   }
-   if ($column == 1) $out .= '<td>&nbsp;</td></tr>';
-   $out .= '</table>';
-   return $out;
+    if ($column == 1) {
+      $out .= '<tr>';
+      $out .= '<td><a class="libraryguides_link" href="'. $category_path .'"> '. $r->name .'</a> </td>';
+    }
+    else {
+      $out .= '<td><a class="libraryguides_link" href="'. $category_path .'"> '. $r->name .'</a> </td>';
+      $out .= '</tr>';
+    }
+    $count += 1;
+    $column = $count % 2;
+  }
+  if ($column == 1) $out .= '<td>&nbsp;</td></tr>';
+  $out .= '</table>';
+  return $out;
 }
 
 function _get_category_info($cid) {
-   $sql = "SELECT * from {libraryguides_categories} WHERE cid=" . $cid ;
-   $result = db_query($sql);
-   $item = db_fetch_object($result);
-   return $item;
+  $sql = "SELECT * from {libraryguides_categories} WHERE cid=". $cid ;
+  $result = db_query($sql);
+  $item = db_fetch_object($result);
+  return $item;
 }
 
 
@@ -397,47 +395,41 @@ function _get_category_info($cid) {
  * @return string Formatted string.
  */
 function _libraryguides_html_content($data) {
-   $attributes = array( 'class' => 'libraryguides-item' );
-   foreach ($data as $key => $value) {
-      $out .= "\n";
-      // $link = l($key, $value, $attributes);
-      $link = "<a href='" . $value . "' ><span class='libraryguides-item'>" . $key . "</span></a>";
-      $out .= $link;
-      $out .= "<br /><br />\n";
-   }
-   return $out;
+  $attributes = array( 'class' => 'libraryguides-item' );
+  foreach ($data as $key => $value) {
+    $out .= "\n";
+    // $link = l($key, $value, $attributes);
+    $link = "<a href='". $value ."' ><span class='libraryguides-item'>". $key ."</span></a>";
+    $out .= $link;
+    $out .= "<br /><br />\n";
+  }
+  return $out;
 }
-
-
-
 
 function _get_libraryguides_category() {
 
-   if (arg(0) == "node" && is_numeric(arg(1)) && arg(2) == NULL) {
-       $node = node_load(arg(1));
-   }
-   $nid = $node->nid;
-   if (empty($nid)) return "";
-   $sql = 'SELECT field_category_value FROM content_type_libguide WHERE vid=' . $node->nid;
-   $result = db_query($sql);
-   $item = db_fetch_object($result);
-   // do we need to check if a taxonomy module is loaded to determine
-   // if the category value is in the term_data table or in the content_type_libguide
-   // table?
-   if (is_numeric($item->field_category_value)) {
-     $tid = $item->field_category_value;
-      $sql = 'SELECT name FROM term_data WHERE tid=' . $tid;
-      $result = db_query($sql);
-      $item = db_fetch_object($result);
-      return $item->name;
-
-   } else {
-      return $item->field_category_value;
-   }
+  if (arg(0) == "node" && is_numeric(arg(1)) && arg(2) == NULL) {
+    $node = node_load(arg(1));
+  }
+  $nid = $node->nid;
+  if (empty($nid)) return "";
+  $sql = 'SELECT field_category_value FROM {content_type_libguide} WHERE vid='. $node->nid;
+  $result = db_query($sql);
+  $item = db_fetch_object($result);
+  // do we need to check if a taxonomy module is loaded to determine
+  // if the category value is in the term_data table or in the content_type_libguide
+  // table?
+  if (is_numeric($item->field_category_value)) {
+    $tid = $item->field_category_value;
+    $sql = 'SELECT name FROM {term_data} WHERE tid='. $tid;
+    $result = db_query($sql);
+    $item = db_fetch_object($result);
+    return $item->name;
+  }
+  else {
+    return $item->field_category_value;
+  }
 }
-
-
-
 
 /**
  * callback for usort, sort by title
@@ -448,10 +440,7 @@ function _libraryguides_sort_by_title($a, $b) {
 
 
 function myprintvar($variable) {
-   print "<br>";
-   print var_export($variable);
-   print "<br>";
+  print "<br />";
+  print var_export($variable);
+  print "<br />";
 }
-
-
-

@@ -1,5 +1,5 @@
 <?php
-// $Id $
+// $Id$
 
 /**
  * @file
@@ -65,7 +65,7 @@ function libraryguides_install() {
  * Add hassubjguide and otherurl fields to store non-libguides url
  */
 function libraryguides_update_1() {
-   $ret = array();
+  $ret = array();
 
   switch ($GLOBALS['db_type']) {
     case 'mysql':
@@ -87,7 +87,7 @@ function libraryguides_update_2() {
   // get current data
   $result = db_query("SELECT * from {libraryguides_categories}");
 
-   $ret = array();
+  $ret = array();
 
   switch ($GLOBALS['db_type']) {
     case 'mysql':
@@ -99,9 +99,19 @@ function libraryguides_update_2() {
       break;
   }
   while ($row = db_fetch_object($result)) {
-    if ($row->haslibguide == 'Y') {  $newlg = 1; } else { $newlg = 0;	}
-    if ($row->hassubjguide == 'Y') {  $newsg = 1; } else { $newsg = 0;	}
-     $res = db_query("UPDATE {libguides_categories} SET haslibguide='%d', hassubjguide='%d'", $newlg, $newsg );
+    if ($row->haslibguide == 'Y') {
+      $newlg = 1;
+    }
+    else {
+      $newlg = 0;
+    }
+    if ($row->hassubjguide == 'Y') {
+      $newsg = 1;
+    }
+    else {
+      $newsg = 0;
+    }
+      $res = db_query("UPDATE {libguides_categories} SET haslibguide='%d', hassubjguide='%d'", $newlg, $newsg );
   }
   drupal_set_message("The schema for libraryguides module has been updated.  ");
   return $ret;
@@ -116,7 +126,7 @@ function libraryguides_update_3() {
   // get current data
   $result = db_query("SELECT * from {libraryguides_categories}");
 
-   $ret = array();
+  $ret = array();
 
   switch ($GLOBALS['db_type']) {
     case 'mysql':
@@ -146,7 +156,7 @@ function libraryguides_update_3() {
  */
 function libraryguides_update_4() {
 
-   $ret = array();
+  $ret = array();
 
   switch ($GLOBALS['db_type']) {
     case 'mysql':
@@ -174,4 +184,3 @@ function libraryguides_uninstall() {
   drupal_set_message('libraryguides Schema Removed');
 }
 
-?>

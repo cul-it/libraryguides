@@ -1,5 +1,5 @@
 <?php
-// $Id:  $
+// $Id$
 
 /**
  * @file
@@ -17,52 +17,64 @@
  */
 function libraryguides_settings_page($op = NULL) {
 
-   // get existing categories
-   $output .= '<p>This page is used to add or edit Library Guides Categories.</p>';
-   $output .= '<br />';
-   $output .= '<h2 style="border-top: 2px solid #ccc; border-bottom: 2px solid #ccc;">Categories</h2>';
-   $output .= get_libraryguides_categories_html();
-   $output .= '<h2>Add a new category.</h2>';
-   $output .= drupal_get_form('libraryguides_settings_form');
-   return $output;
+  // get existing categories
+  $output .= '<p>This page is used to add or edit Library Guides Categories.</p>';
+  $output .= '<br />';
+  $output .= '<h2 style="border-top: 2px solid #ccc; border-bottom: 2px solid #ccc;">Categories</h2>';
+  $output .= get_libraryguides_categories_html();
+  $output .= '<h2>Add a new category.</h2>';
+  $output .= drupal_get_form('libraryguides_settings_form');
+  return $output;
 }
 
 function libraryguides_category_edit($op = NULL) {
 
-   $cid = arg(5);
+  $cid = arg(5);
 
-   $output .= '<p>The page is used to edit information related to a Library Guides Category. ' .
-       'For each category, the Library Guides module will pull in guides created in the Springshare ' .
+  $output .= '<p>The page is used to edit information related to a Library Guides Category.'.
+       'For each category, the Library Guides module will pull in guides created in the Springshare '.
        'LibGuides system automatically.  Additional Non-LibGuides guides can be added here. </p>';
-   $output .= drupal_get_form('libraryguides_settings_edit_form');
+  $output .= drupal_get_form('libraryguides_settings_edit_form');
 
-   // get existing categories
-   $output .= '<br />';
-   $output .= '<h2 style="border-top: 2px solid #ccc; border-bottom: 2px solid #ccc;">Additional Subject Guides</h2>';
-   $output .= get_libraryguides_subguides_html($cid);
-   $output .= '<h2 style="border-top: 2px solid #ccc; border-bottom: 2px solid #ccc;">Add Non-LibGuides Subject Guides</h2>';
-   $output .= drupal_get_form('libraryguides_settings_guide_form');
-   return $output;
+  // get existing categories
+  $output .= '<br />';
+  $output .= '<h2 style="border-top: 2px solid #ccc; border-bottom: 2px solid #ccc;">Additional Subject Guides</h2>';
+  $output .= get_libraryguides_subguides_html($cid);
+  $output .= '<h2 style="border-top: 2px solid #ccc; border-bottom: 2px solid #ccc;">Add Non-LibGuides Subject Guides</h2>';
+  $output .= drupal_get_form('libraryguides_settings_guide_form');
+  return $output;
 }
 
 function libraryguides_category_delete($op = NULL) {
   $cid = arg(5);
-   $output .= '<p>Confirm Delete Category.</p>';
-   $output .= drupal_get_form('libraryguides_settings_form', $cid);
-   // get existing categories
-   $output .= '<br />';
-   $output .= '<h2 style="border-top: 2px solid #ccc; border-bottom: 2px solid #ccc;">Categories</h2>';
-   $output .= get_libraryguides_categories_html();
-   return $output;
+  $count = get_category_guide_count($cid);
+
+  if ($count != 0) {
+    drupal_set_message(t('This category contains non-libguides guides. They must be deleted '.
+          'before the category can be deleted.'), 'warning');
+    drupal_goto('admin/settings/libraryguides');
+  }
+  else {
+    $output .= '<p>Confirm Delete Category.</p>';
+    $output .= drupal_get_form('libraryguides_delete_category_form', $cid);
+  }
+  return $output;
 }
 
 function libraryguides_guide_edit($op = NULL) {
 
-   $gid = arg(5);
-   $output .= '<p>The page is used to edit the Title and URL for a non-libguides Subject Guide' .
+  $gid = arg(5);
+  $output .= '<p>The page is used to edit the Title and URL for a non-libguides Subject Guide'.
        ' </p>';
-   $output .= drupal_get_form('libraryguides_settings_guide_edit_form');
-   return $output;
+  $output .= drupal_get_form('libraryguides_settings_guide_edit_form');
+  return $output;
+}
+
+function libraryguides_guide_delete($op = NULL) {
+  $gid = arg(5);
+  $output .= '<p>Confirm Delete Guide.</p>';
+  $output .= drupal_get_form('libraryguides_delete_guide_form', $gid);
+  return $output;
 }
 
 /**
@@ -106,9 +118,9 @@ function libraryguides_settings_form() {
  * Validates that a Category contains a name
  */
 function libraryguides_settings_form_validate($form, &$form_state) {
-   if ($form_state['values']['name'] == '') {
-      form_set_error('name', t('You must provide a category name'));
-   }
+  if ($form_state['values']['name'] == '') {
+    form_set_error('name', t('You must provide a category name'));
+  }
 }
 
 
@@ -126,13 +138,13 @@ function libraryguides_settings_form_submit($form, &$form_state) {
 
   if ($form_state['values']['op'] == t('Save Category')) {
 
-     $name = $form_state['values']['name'];
-     $tag = $form_state['values']['tag'];
-     $result = db_query("INSERT INTO {libraryguides_categories} (cid, name, tag) VALUES('%d', '%s', '%s')",
+    $name = $form_state['values']['name'];
+    $tag = $form_state['values']['tag'];
+    $result = db_query("INSERT INTO {libraryguides_categories} (cid, name, tag) VALUES('%d', '%s', '%s')",
         NULL,
         $form_state['values']['name'],
         $form_state['values']['tag']);
-     drupal_set_message(t('Category has been added.'));
+    drupal_set_message(t('Category has been added.'));
   }
 }
 
@@ -195,13 +207,37 @@ function libraryguides_settings_edit_form_submit($form, &$form_state) {
 
   if ($form_state['values']['op'] == t('Update Category')) {
 
-     $result = db_query("UPDATE {libraryguides_categories} SET name='%s', tag='%s' WHERE cid=%d",
+    $result = db_query("UPDATE {libraryguides_categories} SET name='%s', tag='%s' WHERE cid=%d",
         $form_state['values']['name'],
         $form_state['values']['tag'],
         $form_state['values']['cid']
         );
-     drupal_set_message(t('Category has been updated.'));
+    drupal_set_message(t('Category has been updated.'));
   }
+}
+
+/**
+ * Define a form for deleting a category
+ */
+function libraryguides_delete_category_form(&$form_state, $cid = NULL) {
+  $category = get_libraryguides_category($cid);
+  $form['cid'] = array('#type' => 'value', '#value' => $cid);
+  $form['name'] = array('#type' => 'value', '#value' => $category->name);
+
+  $question = t('Are you sure you want to delete this category:  %name?', array('%name' => $category->name));
+  $path = isset($_GET['destination']) ? $_GET['destination'] : 'admin/settings/libraryguides';
+  $description = t('This action cannot be undone.');
+  $yes = t('Delete');
+  $no = t('Cancel');
+  return confirm_form($form, $question, $path, $description, $yes, $no);
+
+}
+function libraryguides_delete_category_form_submit($form, &$form_state) {
+
+  $sql = 'DELETE FROM {libraryguides_categories} WHERE cid=%d';
+  $result = db_query($sql, $form['cid']['#value']);
+  drupal_set_message('Deleted category: '. $form['name']['#value']);
+  $form_state['redirect'] = 'admin/settings/libraryguides';
 }
 
 /**
@@ -252,12 +288,12 @@ function libraryguides_settings_guide_form() {
  * Validates that a Guide contains a title and url
  */
 function libraryguides_settings_guide_form_validate($form, &$form_state) {
-   if ($form_state['values']['title'] == '') {
-      form_set_error('title', t('You must provide a title'));
-   }
-   if ($form_state['values']['url'] == '') {
-      form_set_error('url', t('You must provide a url'));
-   }
+  if ($form_state['values']['title'] == '') {
+    form_set_error('title', t('You must provide a title'));
+  }
+  if ($form_state['values']['url'] == '') {
+    form_set_error('url', t('You must provide a url'));
+  }
 }
 
 
@@ -274,16 +310,16 @@ function libraryguides_settings_guide_form_submit($form, &$form_state) {
   $libraryguides_base_path = LIBRARYGUIDES_BASEPATH;
 
   if ($form_state['values']['op'] == t('Save Guide')) {
-     $cid = $form_state['values']['cid'];
-     $title = $form_state['values']['title'];
-     $url = $form_state['values']['url'];
+    $cid = $form_state['values']['cid'];
+    $title = $form_state['values']['title'];
+    $url = $form_state['values']['url'];
 
-     $result = db_query("INSERT INTO {libraryguides_subguides} (gid, cid, title, url) VALUES('%d', '%d', '%s', '%s')",
+    $result = db_query("INSERT INTO {libraryguides_subguides} (gid, cid, title, url) VALUES('%d', '%d', '%s', '%s')",
         NULL,
         $form_state['values']['cid'],
         $form_state['values']['title'],
         $form_state['values']['url']);
-     drupal_set_message(t('Guide has been added.'));
+    drupal_set_message(t('Guide has been added.'));
 
   }
 }
@@ -344,12 +380,12 @@ function libraryguides_settings_guide_edit_form() {
  * Validates that a Guide contains a title and a url
  */
 function libraryguides_settings_guide_edit_form_validate($form, &$form_state) {
-   if ($form_state['values']['title'] == '') {
-      form_set_error('title', t('You must provide a title'));
-   }
-   if ($form_state['values']['url'] == '') {
-      form_set_error('url', t('You must provide a url'));
-   }
+  if ($form_state['values']['title'] == '') {
+    form_set_error('title', t('You must provide a title'));
+  }
+  if ($form_state['values']['url'] == '') {
+    form_set_error('url', t('You must provide a url'));
+  }
 }
 
 /**
@@ -363,13 +399,38 @@ function libraryguides_settings_guide_edit_form_validate($form, &$form_state) {
 function libraryguides_settings_guide_edit_form_submit($form, &$form_state) {
 
   if ($form_state['values']['op'] == t('Update Category')) {
-     $result = db_query("UPDATE {libraryguides_subguides} SET title='%s', url='%s' WHERE gid=%d",
+    $result = db_query("UPDATE {libraryguides_subguides} SET title='%s', url='%s' WHERE gid=%d",
         $form_state['values']['title'],
         $form_state['values']['url'],
         $form_state['values']['gid']
         );
-     drupal_set_message(t('Guide has been updated.'));
+    drupal_set_message(t('Guide has been updated.'));
   }
+}
+
+/**
+ * Define a form for deleting a non-libguides guide
+ */
+function libraryguides_delete_guide_form(&$form_state, $gid = NULL) {
+  $guide = get_libraryguides_subguide($gid);
+  $form['gid'] = array('#type' => 'value', '#value' => $gid);
+  $form['cid'] = array('#type' => 'value', '#value' => $guide->cid);
+  $form['title'] = array('#type' => 'value', '#value' => $guide->title);
+
+  $question = t('Are you sure you want to delete the guide titled %guide_title?', array('%guide_title' => $guide->title));
+  $path = isset($_GET['destination']) ? $_GET['destination'] : 'admin/libraryguides/settings';
+  $description = t('This action cannot be undone.');
+  $yes = t('Delete');
+  $no = t('Cancel');
+  return confirm_form($form, $question, $path, $description, $yes, $no);
+
+}
+function libraryguides_delete_guide_form_submit($form, &$form_state) {
+
+  $sql = 'DELETE FROM {libraryguides_subguides} WHERE gid=%d';
+  $result = db_query($sql, $form['gid']['#value']);
+  drupal_set_message('Deleted guide: '. $form['title']['#value']);
+  $form_state['redirect'] = 'admin/settings/libraryguides/category/edit/'. $form['cid']['#value'];
 }
 
 /**
@@ -381,25 +442,25 @@ function get_libraryguides_categories_html() {
   $out .= '<table cellpadding="2" cellspacing="0" border="1" width="98%">';
   //$out .= '<tr><th width="80%" align="left">Category</th><th width="10%">&nbsp;</th><th width="10%">&nbsp;</th></tr>';
 
-   while ($r = db_fetch_object($result)) {
-     $out .= '<tr>';
-      $out .= '<td width="80%">' . $r->name . ' </td>';
+  while ($r = db_fetch_object($result)) {
+    $out .= '<tr>';
+    $out .= '<td width="80%">'. $r->name .' </td>';
 
-      $out .= '<td width="10%"><a href="/admin/settings/libraryguides/category/edit/' . $r->cid .' ">Edit</a></td>';
-      // $out .= '<td width="10%"><a href="/admin/settings/libraryguides/category/delete/' . $r->cid .' ">Delete</a></td>';
-      $out .= '</tr>';
-   }
-   $out .= '</table>';
-   return $out;
+    $out .= '<td width="10%"><a href="/admin/settings/libraryguides/category/edit/'. $r->cid .' ">Edit</a></td>';
+    $out .= '<td width="10%"><a href="/admin/settings/libraryguides/category/delete/'. $r->cid .' ">Delete</a></td>';
+    $out .= '</tr>';
+  }
+  $out .= '</table>';
+  return $out;
 }
 
 /*
  * get information for a specific library guides category
  */
 function get_libraryguides_category($cid) {
-   $result = db_query('SELECT * FROM {libraryguides_categories} WHERE cid=' . $cid);
-   $category = db_fetch_object($result);
-   return $category;
+  $result = db_query('SELECT * FROM {libraryguides_categories} WHERE cid='. $cid);
+  $category = db_fetch_object($result);
+  return $category;
 }
 
 /**
@@ -407,17 +468,18 @@ function get_libraryguides_category($cid) {
  */
 function get_libraryguides_subguides_html($cid) {
   $out = '';
-  $result = db_query('SELECT * from {libraryguides_subguides} WHERE cid=' . $cid . ' ORDER BY title ');
+  $result = db_query('SELECT * from {libraryguides_subguides} WHERE cid='. $cid .' ORDER BY title ');
   $out .= '<table cellpadding="2" cellspacing="0" border="1" width="98%">';
 
-   while ($r = db_fetch_object($result)) {
-      $out .= '<tr>';
-      $out .= '<td width="80%">' . $r->title . ' </td>';
-      $out .= '<td width="10%"><a href="/admin/settings/libraryguides/guide/edit/' . $r->gid .' ">Edit</a></td>';
-      $out .= '</tr>';
-   }
-   $out .= '</table>';
-   return $out;
+  while ($r = db_fetch_object($result)) {
+    $out .= '<tr>';
+    $out .= '<td width="80%">'. $r->title .' </td>';
+    $out .= '<td width="10%"><a href="/admin/settings/libraryguides/guide/edit/'. $r->gid .' ">Edit</a></td>';
+    $out .= '<td width="10%"><a href="/admin/settings/libraryguides/guide/delete/'. $r->gid .' ">Delete</a></td>';
+    $out .= '</tr>';
+  }
+  $out .= '</table>';
+  return $out;
 }
 
 /*
@@ -425,11 +487,15 @@ function get_libraryguides_subguides_html($cid) {
  */
 function get_libraryguides_subguide($gid) {
 
-   $result = db_query('SELECT * FROM {libraryguides_subguides} WHERE gid=' . $gid);
-   $guide = db_fetch_object($result);
-   return $guide;
+  $result = db_query('SELECT * FROM {libraryguides_subguides} WHERE gid='. $gid);
+  $guide = db_fetch_object($result);
+  return $guide;
 }
 
-
-
-
+/*
+ * get information for a specific library guides category
+ */
+function get_category_guide_count($cid) {
+  $count = db_result(db_query('SELECT COUNT(gid) FROM {libraryguides_subguides} WHERE cid='. $cid));
+  return $count;
+}
