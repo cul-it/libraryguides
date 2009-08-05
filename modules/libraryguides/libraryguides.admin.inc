@@ -398,7 +398,7 @@ function libraryguides_settings_guide_edit_form_validate($form, &$form_state) {
  */
 function libraryguides_settings_guide_edit_form_submit($form, &$form_state) {
 
-  if ($form_state['values']['op'] == t('Update Category')) {
+  if ($form_state['values']['op'] == t('Update Guide')) {
     $result = db_query("UPDATE {libraryguides_subguides} SET title='%s', url='%s' WHERE gid=%d",
         $form_state['values']['title'],
         $form_state['values']['url'],

@@ -1,6 +1,7 @@
 ; $Id$
 name = "libraryguides"
 description = "Dynamically Display libraryguides Content."
+package = Cornell University Library
 core = 6.x
 php = 5.1
 version = "6.x-0.2"
