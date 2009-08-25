@@ -219,7 +219,7 @@ function libraryguides_category_page($cid) {
 
   // Get Guides which match this category from LibGuides system
   $guides = _libraryguides_fetch_guides($categoryurl);
-  // Get Non-Libguides guides
+  // Get Non-Libguides subject guides
   $otherguides = _libraryguides_fetch_nonlibguides($category_info->cid);
 
   $allguides = array_merge($guides, $otherguides);
@@ -229,6 +229,8 @@ function libraryguides_category_page($cid) {
 
   // Get Course Guides by tag
   $courseguides = _libraryguides_fetch_guides($tagurl);
+  $morecourseguides = _libraryguides_fetch_nonlibguides($category_info->cid, 'c');
+  $courseguides = array_merge($courseguides, $morecourseguides);
   if (sizeof($courseguides) > 0) {
     $content .= theme('libraryguides_heading', 'Related Course Guides');
     $content .= theme('libraryguides_links', $courseguides);
@@ -334,16 +336,14 @@ function _libraryguides_fetch_guides($url) {
 }
 
 /**
- * Retrieve information from the LibGuides  API.
+ * Retrieve related guides from the libraryguides database
  *
- * This makes an HTTP connection to the given URL, and retrieves
- * html data, which it then attempts to format for display.
- *
- * @param $url URL to the libraryguides system.
- * @return string String containing the bookshelf.
+ * @param $cid Category ID number in the database
+ * @param $type Type of guide to return ('c' = course guide, 's' = subject guide)
+ * @return array Array of non-LibGuides guides
  */
-function _libraryguides_fetch_nonlibguides($cid) {
-  $result = db_query("SELECT * from {libraryguides_subguides} WHERE cid='". $cid ."'");
+function _libraryguides_fetch_nonlibguides($cid, $type = 's') {
+  $result = db_query("SELECT * from {libraryguides_subguides} WHERE cid='". $cid ."' and type='" . $type . "'");
   $otherguides = array();
   while ($r = db_fetch_object($result)) {
     $otherguides[$r->title] =  $r->url;

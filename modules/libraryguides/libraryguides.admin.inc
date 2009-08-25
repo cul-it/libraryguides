@@ -38,9 +38,9 @@ function libraryguides_category_edit($op = NULL) {
 
   // get existing categories
   $output .= '<br />';
-  $output .= '<h2 style="border-top: 2px solid #ccc; border-bottom: 2px solid #ccc;">Additional Subject Guides</h2>';
+  $output .= '<h2 style="border-top: 2px solid #ccc; border-bottom: 2px solid #ccc;">Additional Guides</h2>';
   $output .= get_libraryguides_subguides_html($cid);
-  $output .= '<h2 style="border-top: 2px solid #ccc; border-bottom: 2px solid #ccc;">Add Non-LibGuides Subject Guides</h2>';
+  $output .= '<h2 style="border-top: 2px solid #ccc; border-bottom: 2px solid #ccc;">Add Non-LibGuides Guides</h2>';
   $output .= drupal_get_form('libraryguides_settings_guide_form');
   return $output;
 }
@@ -50,7 +50,7 @@ function libraryguides_category_delete($op = NULL) {
   $count = get_category_guide_count($cid);
 
   if ($count != 0) {
-    drupal_set_message(t('This category contains non-libguides guides. They must be deleted '.
+    drupal_set_message(t('This category contains non-LibGuides guides. They must be deleted '.
           'before the category can be deleted.'), 'warning');
     drupal_goto('admin/settings/libraryguides');
   }
@@ -64,7 +64,7 @@ function libraryguides_category_delete($op = NULL) {
 function libraryguides_guide_edit($op = NULL) {
 
   $gid = arg(5);
-  $output .= '<p>The page is used to edit the Title and URL for a non-libguides Subject Guide'.
+  $output .= '<p>The page is used to edit the details of a non-LibGuides guide'.
        ' </p>';
   $output .= drupal_get_form('libraryguides_settings_guide_edit_form');
   return $output;
@@ -273,6 +273,12 @@ function libraryguides_settings_guide_form() {
     '#maxlength' => 255
   );
 
+  $form['type'] = array(
+     '#type' => 'radios',
+     '#title' => t('Type'),
+     '#default_value' => 's',
+     '#options' => array('c' => t('Course guide'), 's' => t('Subject guide'))
+  );
 
   $form['update'] = array(
     '#type' => 'submit',
@@ -314,11 +320,12 @@ function libraryguides_settings_guide_form_submit($form, &$form_state) {
     $title = $form_state['values']['title'];
     $url = $form_state['values']['url'];
 
-    $result = db_query("INSERT INTO {libraryguides_subguides} (gid, cid, title, url) VALUES('%d', '%d', '%s', '%s')",
+    $result = db_query("INSERT INTO {libraryguides_subguides} (gid, cid, title, url, type) VALUES('%d', '%d', '%s', '%s', '%s')",
         NULL,
         $form_state['values']['cid'],
         $form_state['values']['title'],
-        $form_state['values']['url']);
+        $form_state['values']['url'],
+        $form_state['values']['type']);
     drupal_set_message(t('Guide has been added.'));
 
   }
@@ -365,6 +372,12 @@ function libraryguides_settings_guide_edit_form() {
     '#maxlength' => 255
   );
 
+  $form['type'] = array(
+     '#type' => 'radios',
+     '#title' => t('Type'),
+     '#default_value' => $guide->type,
+     '#options' => array('c' => t('Course guide'), 's' => t('Subject guide'))
+  );
 
   $form['update'] = array(
     '#type' => 'submit',
@@ -399,9 +412,10 @@ function libraryguides_settings_guide_edit_form_validate($form, &$form_state) {
 function libraryguides_settings_guide_edit_form_submit($form, &$form_state) {
 
   if ($form_state['values']['op'] == t('Update Guide')) {
-    $result = db_query("UPDATE {libraryguides_subguides} SET title='%s', url='%s' WHERE gid=%d",
+    $result = db_query("UPDATE {libraryguides_subguides} SET title='%s', url='%s', type='%s' WHERE gid=%d",
         $form_state['values']['title'],
         $form_state['values']['url'],
+        $form_state['values']['type'],
         $form_state['values']['gid']
         );
     drupal_set_message(t('Guide has been updated.'));

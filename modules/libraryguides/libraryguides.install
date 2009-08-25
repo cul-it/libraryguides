@@ -31,6 +31,7 @@ function libraryguides_schema() {
     'fields' => array(
       'gid' => array('type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE, 'description' => t('The primary id for the guide. ')),
       'cid' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'description' => t('Category ID')),
+      'type' => array('type' => 'char', 'not null' => TRUE, 'description' => t('Course guide (c) or subject guide (s)')), 
       'title' => array('type' => 'text', 'size' => 'normal', 'not null' => TRUE, 'description' => t('The Guide Title.')),
       'url' => array('type' => 'text', 'size' => 'normal', 'not null' => TRUE, 'description' => t('The Guide URL.')),
     ),
@@ -169,6 +170,28 @@ function libraryguides_update_4() {
   return $ret;
 
 }
+
+/*
+ * Add the 'type' field to libraryguides_subguides table to distinguish subject
+ * guides from course guides.
+ */
+function libraryguides_update_5() {
+
+   $ret = array();
+   switch ($GLOBALS['db_type']) {
+      case 'mysql':
+      case 'mysqli':
+         $ret[] = update_sql("ALTER TABLE {libraryguides_subguides} ADD COLUMN type char(1) not null");
+         
+         # Assume that any guides already in the table are subject guides
+         $res = db_query("UPDATE {libguides_subguides} SET type='c'");
+         
+         break;
+   }
+   
+   drupal_set_message("The schema for libraryguides module has been updated.  ");
+   return $ret;   
+} 
 
 /**
  * Implementation of hook_uninstall().
