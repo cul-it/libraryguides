@@ -184,7 +184,7 @@ function libraryguides_update_5() {
          $ret[] = update_sql("ALTER TABLE {libraryguides_subguides} ADD COLUMN type char(1) not null");
          
          # Assume that any guides already in the table are subject guides
-         $res = db_query("UPDATE {libraryguides_subguides} SET type='c'");
+         $res = db_query("UPDATE {libraryguides_subguides} SET type='s'");
          
          break;
    }
