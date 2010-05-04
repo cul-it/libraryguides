@@ -202,6 +202,7 @@ function libraryguides_update_5() {
 function libraryguides_uninstall() {
 
   db_query('DROP TABLE IF EXISTS {libraryguides_categories}');
+  db_query('DROP TABLE IF EXISTS {libraryguides_subguides}');
   // Delete the variables we created.
   variable_del('libraryguides_search_status');
   variable_del('libraryguides_search_url');
