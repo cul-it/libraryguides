@@ -30,5 +30,5 @@
 <li>Research and Writing</li>
 <li>Science and Technology</li>
 <li>Social Sciences</li>
-<li>Sociology and Rural Development</li>
+<li>Sociology and Rural Development</li> 
 
