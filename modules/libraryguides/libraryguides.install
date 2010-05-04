@@ -18,6 +18,7 @@ function libraryguides_schema() {
     'fields' => array(
       'cid' => array('type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE, 'description' => t('The primary identifier category. ')),
       'name' => array('type' => 'text', 'size' => 'normal', 'not null' => TRUE, 'description' => t('The category name.')),
+      'tag' => array('type' => 'varchar', 'length' => '60', 'not null' => TRUE, 'description' => t('The LibGuides category tag.')),
       'url' => array('type' => 'text', 'size' => 'normal', 'not null' => TRUE, 'description' => t('The libraryguides url for this category.')),
       'otherurl' => array('type' => 'text', 'size' => 'normal', 'not null' => TRUE, 'description' => t('The other url for this category.')),
       'haslibguide' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0, 'not null' => TRUE, 'description' => t('Category contains LibGuides.')),
