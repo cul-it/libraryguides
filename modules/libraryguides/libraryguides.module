@@ -351,34 +351,48 @@ function _libraryguides_fetch_nonlibguides($cid, $type = 's') {
   return $otherguides;
 }
 
+/*
+ * Retrieve the list of library guide categories and output an alphabetized, 
+ * linked HTML table of the results
+ */
 function _fetch_libraryguides_index() {
-  $out = '';
-  $out .= '<div>Select a category below to view Library Guides';
-  $out .= ' for a subject area.  </div>';
-  $out .= '<div><br /></div>';
 
   $result = db_query('SELECT * from {libraryguides_categories} ORDER BY name');
-  $out .= '<table cellpadding="0" cellspacing="0" width="98%">';
-  $count = 1;
-  $column = 1;
+  // Count the results and load them into a temporary array (we have to pull out everything ahead
+  // of time in order to create the table going down the rows first rather than back and forth)
+  $count = 0;  
+  $cells = array();
   while ($r = db_fetch_object($result)) {
-    $category_path = '/'. LIBRARYGUIDES_BASEPATH .'/'. $r->cid;
-
-    if ($column == 1) {
-      $out .= '<tr>';
-      $out .= '<td><a class="libraryguides_link" href="'. $category_path .'"> '. $r->name .'</a> </td>';
-    }
-    else {
-      $out .= '<td><a class="libraryguides_link" href="'. $category_path .'"> '. $r->name .'</a> </td>';
-      $out .= '</tr>';
-    }
-    $count += 1;
-    $column = $count % 2;
+      $category_path = '/'. LIBRARYGUIDES_BASEPATH .'/'. $r->cid;
+      $cells[$count]['path'] = $category_path;
+      $cells[$count]['name'] = $r->name;
+      $count += 1;
   }
-  if ($column == 1) $out .= '<td>&nbsp;</td></tr>';
+  $num_rows = floor($count / 2);
+  $offset = $num_rows + ($count % 2);
+  
+  // Create the HTML table. Categories are alphabetized by the SQL query and here are ordered
+  // by row rather than column as before
+  $out = '<div>Select a category below to view Library guides';
+  $out .= ' for a subject area.  </div>';
+  $out .= '<div><br /></div>';
+  $out .= '<table cellpadding="0" cellspacing="0" width="98%">';
+  for ($i = 0; $i < $num_rows; $i++) {
+      $out .= '<tr>';
+      $out .= '<td><a class="libraryguides_link" href="' . $cells[$i]['path'] . '"> ' . $cells[$i]['name'] . '</a></td>';
+      $out .= '<td><a class="libraryguides_link" href="' . $cells[$i + $offset]['path'] . '"> ' . $cells[$i + $offset]['name'] . '</a></td>';
+      $out .= '</tr>';
+  }
+  if ($count % 2 == 1) {
+      $out .= '<tr>';
+      $out .= '<td><a class="libraryguides_link" href="' . $cells[$num_rows + 1]['path'] . '"> ' . $cells[$num_rows + 1]['name'] . '</a></td>';
+      $out .= '</tr>';
+  }
   $out .= '</table>';
   return $out;
 }
+
+
 
 function _get_category_info($cid) {
   $sql = "SELECT * from {libraryguides_categories} WHERE cid=". $cid ;
